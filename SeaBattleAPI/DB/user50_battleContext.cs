@@ -25,42 +25,32 @@ namespace SeaBattleAPI.DB
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("server=192.168.200.35;user=user50;password=26643;database=user50_battle;TrustServerCertificate=true");
+                optionsBuilder.UseSqlServer("server=localhost\\SQLEXPRESS;database=user50_battle;Trusted_Connection=True");
             }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.UseCollation("Cyrillic_General_100_CI_AI_KS_SC_UTF8");
-
             modelBuilder.Entity<EndGame>(entity =>
             {
                 entity.ToTable("EndGame");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.UserShitId).HasColumnName("UserShit_ID");
-
-                entity.Property(e => e.UserWinId).HasColumnName("UserWin_ID");
 
                 entity.HasOne(d => d.UserShit)
                     .WithMany(p => p.EndGameUserShits)
                     .HasForeignKey(d => d.UserShitId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_EndGame_UserShit");
+                    .HasConstraintName("FK_EndGame_User1");
 
                 entity.HasOne(d => d.UserWin)
                     .WithMany(p => p.EndGameUserWins)
                     .HasForeignKey(d => d.UserWinId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_EndGame_UserWin");
+                    .HasConstraintName("FK_EndGame_User");
             });
 
             modelBuilder.Entity<User>(entity =>
             {
                 entity.ToTable("User");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
 
                 entity.Property(e => e.Email).HasMaxLength(50);
 

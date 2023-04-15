@@ -17,6 +17,8 @@ namespace SeaBattleAPI.Controllers
     {
         private readonly user50_battleContext _context;
 
+        public User Player { get; set; }
+
         public UsersController(user50_battleContext context)
         {
             _context = context;
@@ -59,29 +61,61 @@ namespace SeaBattleAPI.Controllers
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
 
         [HttpPost("Registration")]
-        public async Task<ActionResult<User>> PostUser(User user)
+        public async Task<ActionResult<User>> RegistrationUser(User user)
         {
-            MailAddress mailAddress;
             try
             {
-                mailAddress = new MailAddress(user.Email);
+                MailAddress mailAddress;
+                try
+                {
+                    mailAddress = new MailAddress(user.Email);
+                }
+                catch
+                {
+                    return BadRequest("Неверный адрес алектронной почты");
+                }
+
+                Player = await _context.Users.FirstOrDefaultAsync(s => s.Email == user.Email);
+                if (Player == null)
+                {
+                    Player = new User { Email = user.Email, Login = user.Email.Split('@')[0], Password = user.Password };
+                    _context.Users.Add(Player);
+                    await _context.SaveChangesAsync();
+                }
             }
             catch
             {
-                return BadRequest("email shit");
+                return BadRequest("Ошибка связи с БД");
             }
-
-            var player = await _context.Users.FirstOrDefaultAsync(s => s.Email == user.Email);
-            if (player == null)
-            {
-                player = new User {Email = user.Email, Login = user.Email.Split('@')[0], Password = user.Password};
-                _context.Users.Add(player);
-                await _context.SaveChangesAsync();
-            }
-            return player;
+            return Player;
         }
 
         [HttpPost("SignIn")]
+        public async Task<ActionResult<User>> SignInUser(User user)
+        {
+            if(!string.IsNullOrEmpty(user.Login) || !string.IsNullOrEmpty(user.Password))
+            {
+                try
+                {
+                    Player = await _context.Users.FirstOrDefaultAsync(s => s.Login == user.Login && s.Password == user.Password);
+                    if (Player == null)
+                    {
+                        return BadRequest("Неверный логин или пароль");
+                    }
+                }
+                catch
+                {
+                    return BadRequest("Ошибка связи с БД");
+                }
+                
+            }
+            else
+            {
+                BadRequest("Не все поля заполнены");
+            }
+            return Player;
+        }
+
 
         private bool UserExists(int id)
         {
