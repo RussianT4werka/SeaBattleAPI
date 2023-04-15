@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SeaBattleAPI.DB;
 using SeaBattleAPI.Models;
+using SeaBattleAPI.Tools;
 
 namespace SeaBattleAPI.Controllers
 {
@@ -78,7 +79,7 @@ namespace SeaBattleAPI.Controllers
                 Player = await _context.Users.FirstOrDefaultAsync(s => s.Email == user.Email);
                 if (Player == null)
                 {
-                    Player = new User { Email = user.Email, Login = user.Email.Split('@')[0], Password = user.Password };
+                    Player = new User { Email = user.Email, Login = user.Email.Split('@')[0], Password = Hash.HashPass(user.Password) };
                     _context.Users.Add(Player);
                     await _context.SaveChangesAsync();
                 }
@@ -97,7 +98,7 @@ namespace SeaBattleAPI.Controllers
             {
                 try
                 {
-                    Player = await _context.Users.FirstOrDefaultAsync(s => s.Login == user.Login && s.Password == user.Password);
+                    Player = await _context.Users.FirstOrDefaultAsync(s => s.Login == user.Login && s.Password == Hash.HashPass(user.Password));
                     if (Player == null)
                     {
                         return BadRequest("Неверный логин или пароль");
@@ -107,7 +108,6 @@ namespace SeaBattleAPI.Controllers
                 {
                     return BadRequest("Ошибка связи с БД");
                 }
-                
             }
             else
             {
