@@ -113,7 +113,7 @@ namespace SeaBattleAPI.Controllers
             {
                 BadRequest("Не все поля заполнены");
             }
-            return Player;
+            return Ok(Player);
         }
 
 
