@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace SeaBattleAPI.Models
 {
+    [Serializable]
     public partial class Room
     {
         public Room()
@@ -11,7 +13,7 @@ namespace SeaBattleAPI.Models
         }
 
         public int Id { get; set; }
-        public string Name { get; set; } = null!;
+        public string? Name { get; set; }
         public int UserCreatorId { get; set; }
         public int? UserSlowId { get; set; }
         public DateTime? GameTimeStart { get; set; }
@@ -20,6 +22,7 @@ namespace SeaBattleAPI.Models
         public virtual Status Status { get; set; } = null!;
         public virtual User UserCreator { get; set; } = null!;
         public virtual User? UserSlow { get; set; }
+        [JsonIgnore]
         public virtual ICollection<EndGame> EndGames { get; set; }
     }
 }

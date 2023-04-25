@@ -4,9 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using SeaBattleAPI.DB;
 using SeaBattleAPI.Models;
+using SeaBattleAPI.Tools;
 
 namespace SeaBattleAPI.Controllers
 {
@@ -14,32 +16,34 @@ namespace SeaBattleAPI.Controllers
     [ApiController]
     public class RoomsController : ControllerBase
     {
+        private readonly IHubContext<MainHub> _hub;
         private readonly user50_battleContext _context;
 
-        public RoomsController(user50_battleContext context)
+        public RoomsController(user50_battleContext context, IHubContext<MainHub> hubContext)
         {
             _context = context;
+            _hub = hubContext;
         }
 
         // GET: api/Rooms
         [HttpPost("GetRooms")]
-        public async Task<ActionResult<IEnumerable<Room>>> GetRooms()
+        public async Task<ActionResult<IEnumerable<Room>>> GetRooms(int userId)
         {
-          if (_context.Rooms == null)
-          {
-              return NotFound("йух");
-          }
-            return await _context.Rooms.Include( s => s.Status ).Include( s => s.UserCreator).Include(s => s.UserSlow).ToListAsync();
+            if (_context.Rooms == null)
+            {
+                return NotFound("Комнат нет, но вы создайте");
+            }
+            return await _context.Rooms.Include(s => s.Status).Include(s => s.UserCreator).Include(s => s.UserSlow).ToListAsync();
         }
 
         // GET: api/Rooms/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Room>> GetRoom(int id)
         {
-          if (_context.Rooms == null)
-          {
-              return NotFound();
-          }
+            if (_context.Rooms == null)
+            {
+                return NotFound();
+            }
             var room = await _context.Rooms.FindAsync(id);
 
             if (room == null)
@@ -83,17 +87,45 @@ namespace SeaBattleAPI.Controllers
 
         // POST: api/Rooms
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Room>> PostRoom(Room room)
+        [HttpPost("CreateRoom")]
+        public async Task<ActionResult<Room>> CreateRoom(User user)
         {
-          if (_context.Rooms == null)
-          {
-              return Problem("Entity set 'user50_battleContext.Rooms'  is null.");
-          }
+            if (_context.Rooms == null)
+            {
+                return Problem("Entity set 'user50_battleContext.Rooms'  is null.");
+            }
+            var room = new Room { UserCreatorId = user.Id, StatusId = 1 };
             _context.Rooms.Add(room);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetRoom", new { id = room.Id }, room);
+            Room room1 = _context.Rooms.ToList().Last();
+
+            await _hub.Clients.All.SendAsync("AddRoom", room1);
+
+            return Ok(room);
+        }
+
+        [HttpPost("JoinRoom/{userID}/{roomID}")]
+        public async Task<ActionResult<Room>> JoinRoom([FromRoute]int userID, [FromRoute]int roomID)
+        {
+
+            if (_context.Rooms == null)
+            {
+                return Problem("Entity set 'user50_battleContext.Rooms'  is null.");
+            }
+            var room = _context.Rooms.Find(roomID);
+            if(room == null)
+            {
+                return BadRequest("Комнаты нет :)");
+            }
+            room.UserSlowId = userID;
+            room.StatusId = 4;
+            _context.Rooms.Update(room);
+            await _context.SaveChangesAsync();
+
+            await _hub.Clients.All.SendAsync("UpdateRoom", room);
+
+            return Ok(room);
         }
 
         // DELETE: api/Rooms/5

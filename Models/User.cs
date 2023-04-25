@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace SeaBattleAPI.Models
 {
@@ -15,8 +16,9 @@ namespace SeaBattleAPI.Models
         public string Email { get; set; } = null!;
         public string Login { get; set; } = null!;
         public string Password { get; set; } = null!;
-
+        //[JsonIgnore]
         public virtual ICollection<Room> RoomUserCreators { get; set; }
+        //[JsonIgnore]
         public virtual ICollection<Room> RoomUserSlows { get; set; }
     }
 }
